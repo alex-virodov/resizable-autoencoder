@@ -1,4 +1,35 @@
+<script language="JavaScript">
+    function debugMessage(message) {
+        document.getElementById('debug').innerHTML += message + '<br/>';
+    }
+
+    function processImage() {
+        debugMessage('Starting fetch from /predict_cells api');
+        fetch('/predict_cells')
+            .then(response => {
+                debugMessage('Got response, ok is: ' + response.ok);
+                if (!response.ok) {
+                    throw new Error('Response not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                debugMessage('Got blob');
+                document.getElementById('processed_image').src = URL.createObjectURL(blob);
+            })
+            .catch(error => {
+                debugMessage(error)
+            })
+    }
+</script>
+
 <form method='POST' action='/predict'>
     Data: <input type="text" name="data"/><br/>
-    <input type="submit"/>
+    <input type="button" value="process image" onclick="processImage()"/>
 </form>
+
+<img id="processed_image" style="border: 1px solid blue;"/>
+
+<div id="debug" style="border: 1px solid green;">
+    debug:<br/>
+</div>
