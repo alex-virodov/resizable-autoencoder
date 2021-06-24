@@ -5,7 +5,7 @@ import tensorflow.keras as k
 import cv2
 
 def process_image(image):
-    result = np.zeros_like(image)
+    result = image
     result[10:100, 10:100, 0] = 255
     return result
 
@@ -32,9 +32,13 @@ def service():
         labels = ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica']
         return f'result={labels[index]} score={result[0, index]:0.6}'
 
-    @app.route('/predict_cells')
+    @app.route('/predict_cells', methods=['POST'])
     def predict_cells():
-        image = np.zeros(shape=(320, 240, 3), dtype=np.uint8)
+        file = flask.request.files['input_file']
+        content = file.read()
+        content = np.fromstring(content, dtype='uint8')
+        print(f'{file=} {content=}')
+        image = cv2.imdecode(content, cv2.IMREAD_COLOR)
         image = process_image(image)
         _, encoded = cv2.imencode('.jpg', image)
         print(f'{type(encoded)=}')
