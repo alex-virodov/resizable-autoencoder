@@ -1,17 +1,19 @@
 from resizable_autoencoder import ResizableAutoencoder
+from resizable_autoencoder_model import \
+    make_resizable_autoencoder, weight_edges_binary_crossentropy, load_resizable_autoencoder
 import numpy as np
 import random
-import tensorflow as tf
 import tensorflow.keras as k
 import cv2
 from util.image_cache import image_cache
 from util.pad_image import pad_image
 from util.cv2canvas import Cv2GridCanvas
 from util.cv2util import cv2_waitKey
+from typing import Tuple
 
 
 def extract_random_subimages(image: np.ndarray, subimage_size: int, label: np.ndarray, label_size: int, n: int) \
-        -> tuple[np.ndarray, np.ndarray]:
+        -> Tuple[np.ndarray, np.ndarray]:
     subimages = np.zeros(shape=(n, subimage_size, subimage_size, image.shape[2]), dtype=image.dtype)
     sublabels = np.zeros(shape=(n, label_size, label_size, label.shape[2]), dtype=label.dtype)
     for i in range(n):
@@ -25,15 +27,8 @@ def extract_random_subimages(image: np.ndarray, subimage_size: int, label: np.nd
     return subimages, sublabels
 
 
-def weight_edges_binary_crossentropy(y_true, y_pred):
-    # Weight the edges more, as they are under-represented.
-    weight_map = tf.where(y_true[..., 1] > 0.5, 2.0, 1.0)
-    return tf.reduce_mean(
-        tf.multiply(tf.keras.losses.binary_crossentropy(y_true, y_pred), weight_map))
-
-
-def main():
-    resizable_autoencoder = ResizableAutoencoder(n_folds=2, filter_size_schedule=[i*4 for i in [8,8,8,8]])
+def train() -> ResizableAutoencoder:
+    resizable_autoencoder = make_resizable_autoencoder()
 
     inner_size = 32
     subimage_size = resizable_autoencoder.subimage_size_from_inner_size(inner_size)
@@ -50,12 +45,30 @@ def main():
     gt_label = gt_label / 255.0
     # TODO: Grid scanning in addition / instead of random subimages.
     # TODO: Train on multiple images.
+    np.random.seed(42)
     subimages, sublabels = extract_random_subimages(image, subimage_size, gt_label, label_size, n=256)
 
     subimage_model.compile(optimizer=k.optimizers.Adam(),
                            loss=weight_edges_binary_crossentropy,
                            metrics=['accuracy'])
-    subimage_model.fit(subimages, sublabels, epochs=10)
+    subimage_model.fit(subimages, sublabels, epochs=100)
+    subimage_model.save('resizable_autoencoder.h5')
+
+    return resizable_autoencoder
+
+
+def eval(resizable_autoencoder: ResizableAutoencoder) -> None:
+    image = image_cache.get_data_image(2)
+    gt_label = image_cache.get_gt_label_image(2)
+    image = image / 255.0
+    gt_label = gt_label / 255.0
+
+    inner_size = 32
+    subimage_size = resizable_autoencoder.subimage_size_from_inner_size(inner_size)
+    label_size = resizable_autoencoder.label_size_from_inner_size(inner_size)
+    np.random.seed(42)
+    subimages, sublabels = extract_random_subimages(image, subimage_size, gt_label, label_size, n=256)
+    subimage_model = resizable_autoencoder.make_subimage_model(inner_size)
     subresult = subimage_model.predict(subimages)
 
     full_model, image_shape = resizable_autoencoder.make_full_image_model(label_shape=gt_label.shape)
@@ -82,6 +95,15 @@ def main():
     cv2.destroyAllWindows()
 
 
+def train_eval() -> None:
+    eval(train())
+
+
+def load_eval() -> None:
+    eval(load_resizable_autoencoder('resizable_autoencoder.h5'))
+
+
 if __name__ == "__main__":
-    main()
+    # train_eval()
+    load_eval()
 

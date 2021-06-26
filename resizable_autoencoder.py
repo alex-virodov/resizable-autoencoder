@@ -55,6 +55,23 @@ class ResizableAutoencoder:
 
         return model, image_shape
 
+    def load_from_model(self, saved_model):
+        """Load weights and biases from a saved model.
+
+        The model must be saved from a model produced by ResizableAutoencoder with the same settings.
+        """
+        # Make a model so that the layers are properly initialized.
+        discarded_model = self.make_subimage_model(inner_size=8)
+        discarded_model.summary()
+
+        layer_offset = 0
+        if saved_model.layers[0] is k.layers.InputLayer:
+            layer_offset = 1
+
+        for layer_index in range(len(self.layers)):
+            self.layers[layer_index].set_weights(
+                saved_model.layers[layer_index + layer_offset].get_weights())
+
     def inner_size_from_label_size(self, label_size: int) -> int:
         """Compute the image size of the innermost smallest layer given the label (output) size.
 
