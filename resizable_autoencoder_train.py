@@ -40,7 +40,8 @@ def train() -> ResizableAutoencoder:
     image = image_cache.get_data_image(2)
     gt_label = image_cache.get_gt_label_image(2)
     # TODO: expand image first so that we get a full range on the actual label image. Currently
-    #   the edges of the label image are unused. (also we should "learn" the expansion'd data)
+    #   the edges of the label image are unused. (also we should "learn" the expansion'd data).
+    #   This also limits the number of folds we can train, as the input of the net is larger than the output.
     image = image / 255.0
     gt_label = gt_label / 255.0
     # TODO: Grid scanning in addition / instead of random subimages.
@@ -48,10 +49,10 @@ def train() -> ResizableAutoencoder:
     np.random.seed(42)
     subimages, sublabels = extract_random_subimages(image, subimage_size, gt_label, label_size, n=256)
 
-    subimage_model.compile(optimizer=k.optimizers.Adam(),
+    subimage_model.compile(optimizer=k.optimizers.Adam(learning_rate=0.001),
                            loss=weight_edges_binary_crossentropy,
                            metrics=['accuracy'])
-    subimage_model.fit(subimages, sublabels, epochs=100)
+    subimage_model.fit(subimages, sublabels, epochs=1000)
     subimage_model.save('resizable_autoencoder.h5')
 
     return resizable_autoencoder
@@ -104,6 +105,6 @@ def load_eval() -> None:
 
 
 if __name__ == "__main__":
-    # train_eval()
-    load_eval()
+    train_eval()
+    # load_eval()
 

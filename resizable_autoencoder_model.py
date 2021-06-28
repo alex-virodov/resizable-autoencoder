@@ -12,7 +12,7 @@ def weight_edges_binary_crossentropy(y_true, y_pred):
 
 def make_resizable_autoencoder() -> ResizableAutoencoder:
     # Capture the parameters so they can be shared between the train and eval functions
-    return ResizableAutoencoder(n_folds=2, filter_size_schedule=[i*4 for i in [8,8,8,8]])
+    return ResizableAutoencoder(n_folds=2, filter_size_schedule=[16, 32, 32, 16])
 
 
 def load_resizable_autoencoder(model_file_name) -> ResizableAutoencoder:

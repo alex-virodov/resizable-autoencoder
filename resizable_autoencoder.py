@@ -2,6 +2,7 @@ import tensorflow.keras as k
 import math
 import unittest
 from typing import List, Tuple  # Still needed for python before 3.9.
+import numpy as np
 
 
 class ResizableAutoencoder:
@@ -52,6 +53,9 @@ class ResizableAutoencoder:
         model.add(k.layers.InputLayer(input_shape=image_shape))
         for layer in self.layers:
             model.add(layer)
+        # The output size of the model is given by the size of the innermost layer * 2^n_folds. This may
+        # fail to match a specific target size. Center crop the result to make it match.
+        model.add(k.layers.experimental.preprocessing.CenterCrop(label_shape[0], label_shape[1]))
 
         return model, image_shape
 
@@ -107,6 +111,21 @@ class ResizableAutoencoderTest(unittest.TestCase):
         # Test known subimage size (computed on paper).
         self.assertEqual(54, self.resizable_autoencoder.subimage_size_from_inner_size(inner_size=12))
 
+    def test_full_image_model_size(self):
+        # TODO: test other n_fold values, as they will have rounding issues too.
+
+        def test_target_shape(target_shape):
+            model, image_shape = self.resizable_autoencoder.make_full_image_model(label_shape=target_shape)
+            input = np.zeros(shape=image_shape, dtype=np.float)
+            result = model.predict(input[np.newaxis, ...])
+            result = result[0]
+            self.assertEqual(result.shape, target_shape)
+
+        for i in range(250, 300):
+            test_target_shape((i, 320, 3))
+
+        for i in range(250, 300):
+            test_target_shape((256, i, 3))
 
 if __name__ == "__main__":
     unittest.main()
