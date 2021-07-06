@@ -42,7 +42,7 @@ def service():
         return flask.Response(response=encoded.tobytes(), mimetype='image/jpeg')
 
 
-    app.run(host='0.0.0.0', port=9980)
+    app.run(host='0.0.0.0', port=80)
 
 def test_process_image():
     from util.image_cache import image_cache

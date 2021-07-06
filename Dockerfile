@@ -2,6 +2,7 @@ FROM python:3.8-slim
 COPY ./service.py /deploy/
 COPY ./resizable_autoencoder* /deploy/
 COPY ./util/* /deploy/util/
+COPY ./static/* /deploy/static/
 COPY ./requirements.txt /deploy/
 WORKDIR /deploy/
 
@@ -11,5 +12,5 @@ RUN apt-get install ffmpeg libsm6 libxext6  -y
 
 RUN pip install -r requirements.txt
 
-EXPOSE 9980
+EXPOSE 80
 ENTRYPOINT ["python", "service.py"]
