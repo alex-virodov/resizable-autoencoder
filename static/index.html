@@ -3,26 +3,7 @@
         document.getElementById('debug').innerHTML += message + '<br/>';
     }
 
-    function previewImage() {
-        debugMessage('Entered previewImage()');
-        const [file] = document.getElementById('input_file').files;
-        if (file) {
-            document.getElementById('input_image').src = URL.createObjectURL(file);
-        }
-    }
-
-    function processImage() {
-        debugMessage('Entered processImage()');
-        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
-        const formData = new FormData();
-        const [file] = document.getElementById('input_file').files;
-        formData.append('input_file', file);
-
-        if (!file) {
-            debugMessage('Error: Missing file!');
-            return;
-        }
-
+    function runPredictCells(formData) {
         debugMessage('Starting fetch from /predict_cells api');
         fetch('/predict_cells', {
             method: 'POST',
@@ -40,19 +21,109 @@
             document.getElementById('processed_image').src = URL.createObjectURL(blob);
         })
         .catch(error => {
-            debugMessage(error)
+            debugMessage(error);
+            alert(error);
         })
+    }
+
+    function previewImage() {
+        debugMessage('Entered previewImage()');
+        const [file] = document.getElementById('input_file').files;
+        if (file) {
+            document.getElementById('input_image').src = URL.createObjectURL(file);
+        }
+    }
+
+    function processImage() {
+        debugMessage('Entered processImage()');
+        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+        const formData = new FormData();
+        const [file] = document.getElementById('input_file').files;
+        formData.append('input_file', file);
+
+        if (!file) {
+            message = 'Error: Missing file!'
+            debugMessage(message);
+            alert(message);
+            return;
+        }
+        runPredictCells(formData);
+    }
+
+    function processStaticImage(imageName) {
+        debugMessage('Entered processStaticImage(' + imageName + ')');
+        const formData = new FormData();
+        formData.append('static_image', imageName);
+        runPredictCells(formData);
     }
 </script>
 
+<style>
+body {
+  background: #e2e1e0;
+  font-size: 18px;
+  font-family: Roboto, sans-serif;
+}
+
+.card {
+    border: 1px solid black;
+    padding: 10px;
+    background: #fff;
+    border-radius: 3px;
+    display: inline-block;
+    // height: 300px;
+    margin: 1rem;
+    // position: relative;
+    // width: 290px;
+    // overflow: hidden;
+    vertical-align: top;
+    box-shadow: 5px 10px 20px #888888;
+}
+
+.card .title {
+    display: block;
+    margin-bottom: 20px;
+}
+
+.card img {
+    margin-bottom: 20px;
+}
+
+.card input {
+    display: block;
+}
+</style>
+
+
+
 <body onload="previewImage()">
-    Data: <input type="file" id="input_file" onchange="previewImage()"/><br/>
-    <input type="button" value="process image" onclick="processImage()"/><br/>
+    <div class="card">
+        <span class="title">Train image</span>
+        <img src="00ae65c1c6631ae6f2be1a449902976e6eb8483bf6b0740d00530220832c6d3e.png" alt="train image"/>
+        <input type="button" value="Process train image" onclick="processStaticImage('00ae65c1c6631ae6f2be1a449902976e6eb8483bf6b0740d00530220832c6d3e.png')"/>
+    </div>
 
-    <img id="input_image" style="border: 1px solid blue;"/>
-    <img id="processed_image" style="border: 1px solid blue;"/>
+    <div class="card">
+        <span class="title">Validation image</span>
+        <img src="b214800de5ed4cc558f44d569495970f93c8c047f8e464c51d4bd5c276118423.png" alt="validation image"/>
+        <input type="button" value="Process validation image" onclick="processStaticImage('b214800de5ed4cc558f44d569495970f93c8c047f8e464c51d4bd5c276118423.png')"/>
+    </div>
 
-    <div id="debug" style="border: 1px solid green;">
-        debug:<br/>
+    <div class="card">
+        <span class="title">User image</span>
+        <img id="input_image" style="width:320px; height:256px;"/>
+        <input type="file" id="input_file" style="display: none;" onchange="previewImage()"/>
+        <input type="button" value="Browse..." onclick="document.getElementById('input_file').click();" />
+        <input type="button" value="Process user image" onclick="processImage()"/>
+    </div>
+
+    <div class="card">
+        <span class="title">Result</span>
+        <img id="processed_image"  style="width:320px; height:256px;"/>
+    </div>
+
+    <br>
+    <div id="debug" class="card" style="display: block; font-size: 14px;">
+        <span class="title">Debug Log</span>
     </div>
 </body>

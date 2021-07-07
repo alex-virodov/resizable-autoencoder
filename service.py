@@ -5,7 +5,7 @@ import tensorflow.keras as k
 import cv2
 from resizable_autoencoder_model import load_resizable_autoencoder
 from util.pad_image import pad_image
-
+import re
 
 def process_image(image, resizable_autoencoder):
     image = image / 255.0
@@ -31,11 +31,18 @@ def service():
 
     @app.route('/predict_cells', methods=['POST'])
     def predict_cells():
-        file = flask.request.files['input_file']
-        content = file.read()
-        content = np.fromstring(content, dtype='uint8')
-        print(f'{file=} {content=}')
-        image = cv2.imdecode(content, cv2.IMREAD_COLOR)
+        if 'static_image' in flask.request.form:
+            # Ensure static_image is simple filename to avoid security issues.
+            static_image = flask.request.form['static_image']
+            if not re.match('[a-z0-9]+\.png', static_image):
+                raise ValueError('Expected static image name, got: ' + static_image)
+            image = cv2.imread('static/' + static_image, cv2.IMREAD_COLOR)
+        else:
+            file = flask.request.files['input_file']
+            content = file.read()
+            content = np.fromstring(content, dtype='uint8')
+            print(f'{file=} {content=}')
+            image = cv2.imdecode(content, cv2.IMREAD_COLOR)
         image = process_image(image, resizable_autoencoder)
         _, encoded = cv2.imencode('.jpg', image)
         print(f'{type(encoded)=}')
